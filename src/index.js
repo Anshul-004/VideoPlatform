@@ -1,4 +1,3 @@
-// import mongoose from "mongoose"; //DB Se connect krega
 import dotenv from 'dotenv'
 import connectDB from "./db/dbConnect.js";
 import { app } from './app.js';
