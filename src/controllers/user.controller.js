@@ -8,7 +8,7 @@ const registerUser = asyncHandler( async (req,res) => {
     
     //Get data from frontend
     const {fullName, email, username, password} = req.body;
-    console.log(fullName, email, username, password);
+    // console.log(fullName, email, username, password);
     
     //vaildate it
     if([fullName, email, username, password].some((field) => {field?.trim() === ""}))
@@ -18,16 +18,17 @@ const registerUser = asyncHandler( async (req,res) => {
     
     // check if user exists
     // IMPORT User Model (As it can communicate directly with mongo)
-    const ExistingUser = User.findOne({ $or: [{ email },{ username }] });
+    const ExistingUser = await User.findOne({ $or: [{ email },{ username }] });
+    // console.log("EXISTING USER LOG",ExistingUser)
     if(ExistingUser){
         throw new ApiError(400, "User Already Exists");
     }
     
     // avatar - upload and url get.
-    console.log("Request File ",req.files);
+    // console.log("Request File ",req.files);
     
     const avatarLocal = req.files?.avatar[0]?.path; //.files MULTER ka middleware deta hai, avatar is the name there.
-    const coverImageLocal = req.files?.coverImage[0]?.path
+    const coverImageLocal = req.files?.coverImage[0]?.path|| "";
 
     if(!avatarLocal){
         throw new ApiError(400, "Avatar is Required");
@@ -36,7 +37,7 @@ const registerUser = asyncHandler( async (req,res) => {
     const avatarUploaded = await uploadFile(avatarLocal);
     const coverUploaded = await uploadFile(coverImageLocal);
 
-    if(avatarUploaded){
+    if(!avatarUploaded){
         throw new ApiError(400, "Avatar Required");
     }
 
