@@ -4,6 +4,23 @@ import {ApiResponse} from '../utils/ApiResponse.js'
 import {User} from '../models/user.model.js'
 import {uploadFile} from '../utils/fileUpload.js'
 
+const generateAccessAndRefreshToken = async(userId) => {
+    try {
+        const user = await User.findById(userId);
+        const accessToken = user.generateAccessToken();
+        const refreshToken = user.generateRefereshToken();
+
+        //put refresh token in db
+        user.refreshToken = refreshToken;
+        await user.save({validateBeforeSave: false});
+
+        return {accessToken,refreshToken}
+
+    } catch (error) {
+        throw new ApiError(500, "Something went wrong while generating refresh & Access tokens")
+    }
+}
+
 const registerUser = asyncHandler( async (req,res) => {
     
     //Get data from frontend
@@ -73,9 +90,73 @@ const registerUser = asyncHandler( async (req,res) => {
     
 })
 
+const loginUser = asyncHandler( async (req, res) => {
+    //Get data from frontend (req.body -> email / username, password)
+    //check if the email/ user -> valid
+    //compare the passwd , if T -> LOG IN, F -> RESET FIELD, RED ERROR MSG.
+    //ACCESS & REFERESH TOKEN
+    //SEND COOKIE
+    // return resp
+
+    const {email,username, password} = req.body;
+
+    if(username=="" || email==""){
+        throw new ApiError(400,"Email OR username is required");
+    }
+    if(password == "") {
+        throw new ApiError(400, "Password required");
+    }
+
+    const PossibleUser = await User.findOne({$or:[{username},{email}]});
+    
+    if(!PossibleUser){
+        throw new ApiError(404, "No Such User Exists");
+    }
+    
+    //Checking passwords (Encrypted)
+    const passwordCheck = await PossibleUser.isPasswordCorrect(password);
+    if(!passwordCheck){
+        throw new ApiError(401, "Invalid User Credentials")
+    }
+
+    const {accessToken,refreshToken} = await generateAccessAndRefreshToken(PossibleUser._id);
+    //Upadte user, for refresh token field updated
+    const LoggedInUser = await User.findById(PossibleUser._id).select("-password -refreshToken");
+
+    //SENDING COOKIE, options goes with cookie
+    const options = {
+        httpOnly: true,
+        secure: true
+    }
+
+    return res
+    .status(200)
+    .cookie("AccessToken", accessToken, options)
+    .cookie("RefreshToken", refreshToken, options)
+    .json(new ApiResponse(200,{user: LoggedInUser, accessToken, refreshToken}), "User Logged In Successfully"); //good practice to send access and refresh tokens.
+})
+
+const logOutUser = asyncHandler(async(req,res) => {
+    //Clear Cookies.
+    const userId = req.user._id;
+
+    await User.findByIdAndUpdate(userId,
+    {
+        $set: {refreshToken: undefined},
+    },
+    {new: true}
+    )
+
+    return res
+    .status(200)
+    .clearCookie("AccessToken", options)
+    .clearCookie("RefreshToken",options)
+    .json(new ApiResponse(200, {}, "User Logged Out"));
+})
+
 const testUser = asyncHandler(async(req,res) => {
     
     res.send("Ok Testing Workis");
 } )
 
-export {registerUser, testUser};
+export {registerUser, testUser,loginUser,logOutUser};

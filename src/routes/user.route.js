@@ -1,6 +1,7 @@
 import { Router } from "express";
-import { registerUser, testUser } from "../controllers/user.controller.js";
+import { loginUser, logOutUser, registerUser, testUser } from "../controllers/user.controller.js";
 import {upload} from "../middlewares/multer.middleware.js"
+import { verifyJWT } from "../middlewares/auth.middleware.js";
 const router = Router();
 
 // /user + /register route :
@@ -15,9 +16,14 @@ router.route("/register").post(
         maxCount: 1
     }]) //MIDDLEWARE
     ,registerUser)
+
+router.route("/login").post(loginUser)
+
+
 router.route("/test").get(testUser)
 
-// // /user + /login route :
-// router.route("/login").post(loginUser)
+//secured routes
+router.route("/logout").post(verifyJWT,logOutUser) //verifyJWT is Middleware
+
 
 export default router;
