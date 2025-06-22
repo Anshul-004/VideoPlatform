@@ -11,7 +11,7 @@ const userSchema = new mongoose.Schema({
         trim: true,
         index: true //makes useful for searching
     },
-    username: {
+    email: {
         type: String,
         required: true,
         unique: true,
@@ -57,22 +57,26 @@ userSchema.methods.isPasswordCorrect = async function (password){ //new method i
     return await bcrypt.compare(password, this.password); //password is the string & this.password is the encrypted version
 }
 //JWT TOKENS
-userSchema.methods.generateAccessToken = async function (){
-    jwt.sign({ //this refers to the database 
-        _id: this._id,
-        email: this.email,
-        username: this.username,
-        fullName: this.fullName
-    },
-    process.env.ACCESS_TOKEN_SECRET,
-    {
-        expiresIn: process.env.ACCESS_TOKEN_EXPIRY
-    }
-)
+userSchema.methods.generateAccessToken = function (){
+    // console.log(process.env.ACCESS_TOKEN_EXPIRY)
+    return jwt.sign(
+        { 
+            //this -> database
+            _id: this._id,
+            email: this.email,
+            username: this.username,
+            fullName: this.fullName
+        },
+        process.env.ACCESS_TOKEN_SECRET,
+        {
+            expiresIn: process.env.ACCESS_TOKEN_EXPIRY
+        }
+    )
 }
 
 userSchema.methods.generateRefereshToken = function (){
-    jwt.sign({ //this refers to the database 
+    // console.log(process.env.REFRESH_TOKEN_EXPIRY)
+    return jwt.sign({ //this refers to the database 
         _id: this._id,
     },
     process.env.REFRESH_TOKEN_SECRET,

@@ -6,10 +6,12 @@ import {uploadFile} from '../utils/fileUpload.js'
 
 const generateAccessAndRefreshToken = async(userId) => {
     try {
+        // console.log(userId)
         const user = await User.findById(userId);
+        // console.log(user) WORKS
         const accessToken = user.generateAccessToken();
         const refreshToken = user.generateRefereshToken();
-
+        // console.log(accessToken,refreshToken)
         //put refresh token in db
         user.refreshToken = refreshToken;
         await user.save({validateBeforeSave: false});
@@ -17,6 +19,7 @@ const generateAccessAndRefreshToken = async(userId) => {
         return {accessToken,refreshToken}
 
     } catch (error) {
+        console.log(error)
         throw new ApiError(500, "Something went wrong while generating refresh & Access tokens")
     }
 }
@@ -26,7 +29,7 @@ const registerUser = asyncHandler( async (req,res) => {
     //Get data from frontend
     const {fullName, email, username, password} = req.body;
     // console.log(fullName, email, username, password);
-    
+    // console.log(req);
     //vaildate it
     if([fullName, email, username, password].some((field) => {field?.trim() === ""}))
         {    
@@ -44,10 +47,12 @@ const registerUser = asyncHandler( async (req,res) => {
     // avatar - upload and url get.
     
     const avatarLocal = req.files?.avatar[0]?.path; //.files MULTER ka middleware deta hai, avatar is the name there.
-    
+    console.log(req.files)
     let coverImageLocal;
     if (req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0) {
+        // console.log("IN IF FOR COVER IMAGE")
         coverImageLocal = req.files.coverImage[0].path
+        // console.log(coverImageLocal)
     }
 
     if(!avatarLocal){
@@ -56,8 +61,6 @@ const registerUser = asyncHandler( async (req,res) => {
 
     const avatarUploaded = await uploadFile(avatarLocal);
     const coverUploaded = await uploadFile(coverImageLocal);
-    // console.log(avatarUploaded);
-    // console.log(coverUploaded);
     
     if(!avatarUploaded){
         throw new ApiError(400, "Avatar Required");
@@ -97,10 +100,10 @@ const loginUser = asyncHandler( async (req, res) => {
     //ACCESS & REFERESH TOKEN
     //SEND COOKIE
     // return resp
-
+    // console.log(req.body)
     const {email,username, password} = req.body;
 
-    if(username=="" || email==""){
+    if(!username && !email){
         throw new ApiError(400,"Email OR username is required");
     }
     if(password == "") {
@@ -139,7 +142,10 @@ const loginUser = asyncHandler( async (req, res) => {
 const logOutUser = asyncHandler(async(req,res) => {
     //Clear Cookies.
     const userId = req.user._id;
-
+    const options = {
+        httpOnly: true,
+        secure: true
+    }
     await User.findByIdAndUpdate(userId,
     {
         $set: {refreshToken: undefined},
