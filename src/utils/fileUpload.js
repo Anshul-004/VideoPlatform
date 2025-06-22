@@ -12,7 +12,7 @@ cloudinary.config({
 
 const uploadFile = async (localFilePath) => {
     try {
-        // console.log(process.env.CLOUDINARY_API_KEY);
+        
         if(!localFilePath) return null;
         //upload file to cloudinary
         const resp = await cloudinary.uploader.upload(localFilePath, {
@@ -20,6 +20,7 @@ const uploadFile = async (localFilePath) => {
         });
         // console.log(resp.format);
         console.log("File uploaded to Cloudinary successfully", resp.url);
+        fs.unlink(localFilePath);
         return resp;
     } catch (error) {
         fs.unlinkSync(localFilePath); // Delete the file if upload fails
