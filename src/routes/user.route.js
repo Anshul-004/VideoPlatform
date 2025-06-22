@@ -16,6 +16,7 @@ router.route("/register").post(
     }]) //MIDDLEWARE
     ,registerUser)
 router.route("/test").get(testUser)
+
 // // /user + /login route :
 // router.route("/login").post(loginUser)
 

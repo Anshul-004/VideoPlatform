@@ -1,8 +1,8 @@
 import {asyncHandler} from '../utils/asyncHandler.js'
 import {ApiError} from '../utils/ApiError.js'
+import {ApiResponse} from '../utils/ApiResponse.js'
 import {User} from '../models/user.model.js'
 import {uploadFile} from '../utils/fileUpload.js'
-import { ApiResponse } from '../utils/ApiResponse.js'
 
 const registerUser = asyncHandler( async (req,res) => {
     
@@ -25,10 +25,13 @@ const registerUser = asyncHandler( async (req,res) => {
     }
     
     // avatar - upload and url get.
-    // console.log("Request File ",req.files);
     
     const avatarLocal = req.files?.avatar[0]?.path; //.files MULTER ka middleware deta hai, avatar is the name there.
-    const coverImageLocal = req.files?.coverImage[0]?.path|| "";
+    
+    let coverImageLocal;
+    if (req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0) {
+        coverImageLocal = req.files.coverImage[0].path
+    }
 
     if(!avatarLocal){
         throw new ApiError(400, "Avatar is Required");
@@ -36,7 +39,9 @@ const registerUser = asyncHandler( async (req,res) => {
 
     const avatarUploaded = await uploadFile(avatarLocal);
     const coverUploaded = await uploadFile(coverImageLocal);
-
+    // console.log(avatarUploaded);
+    // console.log(coverUploaded);
+    
     if(!avatarUploaded){
         throw new ApiError(400, "Avatar Required");
     }
